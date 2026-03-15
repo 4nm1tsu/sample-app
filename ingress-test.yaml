@@ -8,6 +8,10 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true" # httpsリダイレクト
     kubernetes.io/ingress.class: nginx
 spec:
+  tls:
+    - hosts:
+        - nginx.4nm1tsu.com
+      secretName: letsencrypt-cert-nginx # 証明書作成
   rules:
   - host: nginx.4nm1tsu.com
     http:
