@@ -4,6 +4,8 @@ metadata:
   name: simple-nginx-ingress
   namespace: external-developer-ns
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-issuer # 証明書自動更新
+    nginx.ingress.kubernetes.io/ssl-redirect: "true" # httpsリダイレクト
     kubernetes.io/ingress.class: nginx
 spec:
   rules:
