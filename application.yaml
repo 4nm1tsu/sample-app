@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-app
+  namespace: argocd
+spec:
+  project: external-developer-project
+  source:
+    repoURL: https://github.com/4nm1tsu/sample-app
+    targetRevision: HEAD
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-developer-ns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      enabled: true
