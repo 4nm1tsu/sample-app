@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: simple-nginx
-  namespace: external-developer-ns
+  namespace: external-developers
 spec:
   replicas: 1
   selector:
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: simple-nginx-svc
-  namespace: external-developer-ns
+  namespace: external-developers
 spec:
   selector:
     app: simple-nginx
