@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: sample-app
-  namespace: argocd
+#  namespace: argocd # external-developers-projectには権限ない
 spec:
   project: external-developers-project
   source:
