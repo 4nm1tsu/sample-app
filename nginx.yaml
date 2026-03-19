@@ -16,6 +16,15 @@ spec:
       containers:
       - name: nginx
         image: nginx:alpine
+        env:
+        - name: APP_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: simple-nginx-secret
+              key: api_key
+        volumeMounts:
+        - name: storage
+          mountPath: /usr/share/nginx/html
         resources:
           requests:
             memory: "64Mi"
