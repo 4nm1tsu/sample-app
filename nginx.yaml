@@ -14,28 +14,74 @@ spec:
         app: simple-nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:alpine
-        env:
-        - name: APP_API_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: simple-nginx-secret
-              key: api_key
-        volumeMounts:
-        - name: storage
-          mountPath: /usr/share/nginx/html
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "100m"
-          limits:
-            memory: "128Mi"
-            cpu: "200m"
+        - name: nginx
+          image: python:3.9-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              pip install flask > /dev/null 2>&1
+              cat <<EOF > /app.py
+              from flask import Flask, request, render_template_string
+              import os, datetime
+              app = Flask(__name__)
+              MSG_FILE = "/usr/share/nginx/html/access.log"
+              API_TOKEN = os.getenv('APP_API_TOKEN', 'No Token Found')
+              HTML_LAYOUT = """
+              <!DOCTYPE html>
+              <html>
+              <head><title>PaaS NFS Test Board</title></head>
+              <body style="font-family: sans-serif; margin: 2em;">
+                  <h1>NFS Message Board</h1>
+                  <p><strong>Status:</strong> Connected to OpenBao (Token: {{ token }})</p>
+                  <hr>
+                  <form method="POST">
+                      <input type="text" name="msg" style="width:300px;" placeholder="Write to NFS..." required>
+                      <input type="submit" value="Post to NFS">
+                  </form>
+                  <h3>Stored Messages (NFS):</h3>
+                  <pre style="background:#f4f4f4; padding:1em;">{{ messages }}</pre>
+              </body>
+              </html>
+              """
+              @app.route("/", methods=["GET", "POST"])
+              def index():
+                  if request.method == "POST":
+                      msg = request.form.get("msg")
+                      with open(MSG_FILE, "a") as f:
+                          f.write(f"{datetime.datetime.now()}: {msg}\n")
+                  content = ""
+                  if os.path.exists(MSG_FILE):
+                      with open(MSG_FILE, "r") as f:
+                          content = f.read()
+                  return render_template_string(HTML_LAYOUT, token=API_TOKEN, messages=content)
+              if __name__ == "__main__":
+                  app.run(host='0.0.0.0', port=80)
+              EOF
+              python /app.py
+          # --- 1. OpenBaoからのシークレット注入 ---
+          env:
+            - name: APP_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: simple-nginx-secret
+                  key: api_key
+          # --- 2. NFSストレージのマウント ---
+          volumeMounts:
+            - name: storage
+              mountPath: /usr/share/nginx/html
+          # --- 3. リソース制限 ---
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+      # --- 4. 使うボリュームの定義 ---
       volumes:
-      - name: storage
-        persistentVolumeClaim:
-          claimName: nginx-pvc
+        - name: storage
+          persistentVolumeClaim:
+            claimName: nginx-pvc
 ---
 apiVersion: v1
 kind: Service
